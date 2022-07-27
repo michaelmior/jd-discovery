@@ -3,6 +3,7 @@ use std::io;
 use std::io::prelude::*;
 
 use itertools::Itertools;
+use indicatif::ProgressBar;
 
 fn collect_values(values: &mut HashMap<String, BTreeSet<String>>, key: &str, value: &json::JsonValue) {
     if value.is_object() {
@@ -32,6 +33,11 @@ fn collect_values(values: &mut HashMap<String, BTreeSet<String>>, key: &str, val
 fn main() {
     let mut values: HashMap<String, BTreeSet<String>> = HashMap::new();
 
+    // Initialize spinner
+    let spinner = ProgressBar::new_spinner();
+    spinner.enable_steady_tick(100);
+
+    // Process input and collect values
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
         let parsed = json::parse(&line.unwrap()).ok().take().unwrap();
@@ -39,6 +45,10 @@ fn main() {
             collect_values(&mut values, key, value);
         }
     }
+
+    // Remove spinner
+    spinner.disable_steady_tick();
+    spinner.finish_and_clear();
 
     let mut refs: HashMap<String, HashMap<String, usize>> = HashMap::new();
     let mut value_counts: HashMap<String, usize> = HashMap::new();
