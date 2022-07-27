@@ -34,7 +34,7 @@ fn main() {
     let mut values: HashMap<String, BTreeSet<String>> = HashMap::new();
 
     // Initialize spinner
-    let spinner = ProgressBar::new_spinner();
+    let mut spinner = ProgressBar::new_spinner().with_message("Reading input…");
     spinner.enable_steady_tick(100);
 
     // Process input and collect values
@@ -48,7 +48,11 @@ fn main() {
 
     // Remove spinner
     spinner.disable_steady_tick();
-    spinner.finish_and_clear();
+    spinner.finish_with_message("Collected values");
+
+    // Start new progress for value counts
+    spinner = ProgressBar::new_spinner().with_message("Counting unique values…");
+    spinner.enable_steady_tick(100);
 
     let mut refs: HashMap<String, HashMap<String, usize>> = HashMap::new();
     let mut value_counts: HashMap<String, usize> = HashMap::new();
@@ -63,7 +67,19 @@ fn main() {
         value_counts.insert(key.to_owned(), values[key].len());
     }
 
+    // Remove spinner
+    spinner.disable_steady_tick();
+    spinner.finish_with_message("Counted values");
+
+    // Start new progress for checking combinations
+    spinner = ProgressBar::new_spinner();
+    spinner.enable_steady_tick(100);
+
+    let mut it = 0;
     loop {
+        spinner.set_message(format!("Finding dependencies… (Iteration {})", it));
+        it += 1;
+
         let mut smallest: String = "".to_owned();
         let mut to_process = Vec::new();
         let mut to_delete = Vec::new();
@@ -107,6 +123,9 @@ fn main() {
             values.remove(k);
         }
     }
+
+    // Clear final spinner
+    spinner.finish_and_clear();
 
     let mut inds = Vec::new();
     for (k, v) in refs.iter() {
