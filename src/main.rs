@@ -1,11 +1,15 @@
-use std::collections::{HashMap, BTreeSet};
+use std::collections::{BTreeSet, HashMap};
 use std::io;
 use std::io::prelude::*;
 
+use indicatif::{ProgressBar, ProgressStyle};
 use itertools::Itertools;
-use indicatif::ProgressBar;
 
-fn collect_values(values: &mut HashMap<String, BTreeSet<String>>, path: &str, value: &json::JsonValue) {
+fn collect_values(
+    values: &mut HashMap<String, BTreeSet<String>>,
+    path: &str,
+    value: &json::JsonValue,
+) {
     if value.is_object() {
         // Traverse all keys in a dictionary adding a dot to the path
         for (dict_key, dict_value) in value.entries() {
@@ -76,14 +80,13 @@ fn main() {
     spinner.finish_with_message("Counted values");
 
     // Start new progress for checking combinations
-    spinner = ProgressBar::new_spinner();
-    spinner.enable_steady_tick(100);
+    spinner = ProgressBar::new(values.len() as u64).with_prefix("Finding dependencies");
+    spinner.set_style(
+        ProgressStyle::default_bar()
+            .template("{prefix} [{elapsed_precise}] {bar} {pos:>7}/{len:7}"),
+    );
 
-    let mut it = 0;
     loop {
-        spinner.set_message(format!("Finding dependencies… (Iteration {})", it));
-        it += 1;
-
         let mut smallest: String = "".to_owned();
         let mut to_process = Vec::new();
         let mut to_delete = Vec::new();
@@ -130,6 +133,7 @@ fn main() {
         }
 
         // Delete the keys which were pending from earlier
+        spinner.inc(to_delete.len() as u64);
         for k in to_delete.iter() {
             values.remove(k);
         }
