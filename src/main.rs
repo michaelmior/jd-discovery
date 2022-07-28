@@ -158,3 +158,20 @@ fn main() {
         println!("{:?}", ind);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_collects_object_values() {
+        let obj = json::parse(r#"{"a": 3}"#).unwrap();
+        let mut values: HashMap<String, BTreeSet<String>> = HashMap::new();
+        let mut all_values: BTreeSet<String> = BTreeSet::new();
+
+        collect_values(&mut values, &mut all_values, "", &obj);
+
+        assert!(values.get("a").unwrap().contains("3"));
+        assert!(all_values.contains("3"));
+    }
+}
