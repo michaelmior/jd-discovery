@@ -126,7 +126,9 @@ fn main() {
         }
 
         // Delete the keys which were pending from earlier
-        spinner.inc(to_delete.len() as u64);
+        if !to_delete.is_empty() {
+            spinner.inc(to_delete.len() as u64);
+        }
         for k in to_delete.iter() {
             values.remove(k);
         }
