@@ -16,7 +16,10 @@ fn collect_values(
         // Traverse all keys in a dictionary adding a dot to the path
         for (dict_key, dict_value) in value.entries() {
             let mut new_path: String = path.to_owned();
-            new_path.push('.');
+
+            if !new_path.is_empty() {
+                new_path.push('.');
+            }
             new_path.push_str(dict_key);
             collect_values(values, all_values, &new_path, dict_value);
         }
@@ -55,9 +58,7 @@ fn main() {
     let stdin = io::stdin();
     for line in stdin.lines() {
         let parsed = json::parse(&line.unwrap()).ok().take().unwrap();
-        for (key, value) in parsed.entries() {
-            collect_values(&mut values, &mut all_values, key, value);
-        }
+        collect_values(&mut values, &mut all_values, "", &parsed);
     }
 
     // Remove spinner
