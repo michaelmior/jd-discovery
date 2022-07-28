@@ -1,6 +1,5 @@
 use std::collections::{BTreeSet, HashMap};
 use std::io;
-use std::io::prelude::*;
 
 use indicatif::{ProgressBar, ProgressStyle};
 use itertools::Itertools;
@@ -14,7 +13,7 @@ fn collect_values(
         // Traverse all keys in a dictionary adding a dot to the path
         for (dict_key, dict_value) in value.entries() {
             let mut new_path: String = path.to_owned();
-            new_path.push_str(".");
+            new_path.push('.');
             new_path.push_str(dict_key);
             collect_values(values, &new_path, dict_value);
         }
@@ -47,7 +46,7 @@ fn main() {
 
     // Process input and collect values
     let stdin = io::stdin();
-    for line in stdin.lock().lines() {
+    for line in stdin.lines() {
         let parsed = json::parse(&line.unwrap()).ok().take().unwrap();
         for (key, value) in parsed.entries() {
             collect_values(&mut values, key, value);
@@ -101,7 +100,7 @@ fn main() {
                         if smallest == *val {
                             // Add this path to those which must be processed
                             to_process.push(path.clone());
-                        } else if smallest == "" || *val < smallest.to_owned() {
+                        } else if smallest.is_empty() || *val < smallest {
                             // We found a new smallest value, so start over
                             smallest = val.clone();
                             to_process = vec![path.clone()];
