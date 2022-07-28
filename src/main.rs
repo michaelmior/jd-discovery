@@ -164,7 +164,7 @@ fn main() {
 mod tests {
     use super::*;
 
-    use json::object;
+    use json::{array, object};
 
     #[test]
     fn it_collects_object_values() {
@@ -179,7 +179,7 @@ mod tests {
     }
 
     #[test]
-    fn it_collects_nest_object_values() {
+    fn it_collects_nested_object_values() {
         let obj = object! {a: {b: 3}};
         let mut values: HashMap<String, BTreeSet<String>> = HashMap::new();
         let mut all_values: BTreeSet<String> = BTreeSet::new();
@@ -188,5 +188,19 @@ mod tests {
 
         assert!(values.get("a.b").unwrap().contains("3"));
         assert!(all_values.contains("3"));
+    }
+
+    #[test]
+    fn it_collects_array_values() {
+        let obj = array![3, 4];
+        let mut values: HashMap<String, BTreeSet<String>> = HashMap::new();
+        let mut all_values: BTreeSet<String> = BTreeSet::new();
+
+        collect_values(&mut values, &mut all_values, "", &obj);
+
+        assert!(values.get("[]").unwrap().contains("3"));
+        assert!(values.get("[]").unwrap().contains("4"));
+        assert!(all_values.contains("3"));
+        assert!(all_values.contains("4"));
     }
 }
