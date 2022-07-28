@@ -158,7 +158,7 @@ fn main() {
         }
     }
     inds.sort_unstable_by(|a, b| a.2.partial_cmp(&b.2).unwrap());
-    
+
     for ind in inds.iter() {
         println!("{:?}", ind);
     }
