@@ -164,9 +164,11 @@ fn main() {
 mod tests {
     use super::*;
 
+    use json::object;
+
     #[test]
     fn it_collects_object_values() {
-        let obj = json::parse(r#"{"a": 3}"#).unwrap();
+        let obj = object! {a: 3};
         let mut values: HashMap<String, BTreeSet<String>> = HashMap::new();
         let mut all_values: BTreeSet<String> = BTreeSet::new();
 
@@ -178,7 +180,7 @@ mod tests {
 
     #[test]
     fn it_collects_nest_object_values() {
-        let obj = json::parse(r#"{"a": {"b": 3}}"#).unwrap();
+        let obj = object! {a: {b: 3}};
         let mut values: HashMap<String, BTreeSet<String>> = HashMap::new();
         let mut all_values: BTreeSet<String> = BTreeSet::new();
 
