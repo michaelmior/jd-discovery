@@ -5,27 +5,31 @@ use std::io::prelude::*;
 use itertools::Itertools;
 use indicatif::ProgressBar;
 
-fn collect_values(values: &mut HashMap<String, BTreeSet<String>>, key: &str, value: &json::JsonValue) {
+fn collect_values(values: &mut HashMap<String, BTreeSet<String>>, path: &str, value: &json::JsonValue) {
     if value.is_object() {
+        // Traverse all keys in a dictionary adding a dot to the path
         for (dict_key, dict_value) in value.entries() {
-            let mut new_key: String = key.to_owned();
-            new_key.push_str(".");
-            new_key.push_str(dict_key);
-            collect_values(values, &new_key, dict_value);
+            let mut new_path: String = path.to_owned();
+            new_path.push_str(".");
+            new_path.push_str(dict_key);
+            collect_values(values, &new_path, dict_value);
         }
     } else if value.is_array() {
+        // Loop through all array elements and add [] to the path
         for list_value in value.members() {
-            let mut new_key: String = key.to_owned();
-            new_key.push_str("[]");
-            collect_values(values, &new_key, list_value);
+            let mut new_path: String = path.to_owned();
+            new_path.push_str("[]");
+            collect_values(values, &new_path, list_value);
         }
     } else if !value.is_null() && (!value.is_string() || !value.is_empty()) {
-        if !values.contains_key(key) {
+        if !values.contains_key(path) {
+            // Create a new set to represent values with this path
             let mut set = BTreeSet::new();
             set.insert(value.dump());
-            values.insert(key.to_owned(), set);
+            values.insert(path.to_owned(), set);
         } else {
-            values.get_mut(key).unwrap().insert(value.dump());
+            // Add this value to those observed at this path
+            values.get_mut(path).unwrap().insert(value.dump());
         }
     }
 }
@@ -85,27 +89,32 @@ fn main() {
         let mut to_delete = Vec::new();
         let mut remaining = false;
 
-
+        // Find the smallest value and which paths need to be processed
         {
-            for (key, vals) in values.iter() {
+            for (path, vals) in values.iter() {
                 match vals.iter().next() {
                     Some(val) => {
                         remaining = true;
                         if smallest == *val {
-                            to_process.push(key.clone());
+                            // Add this path to those which must be processed
+                            to_process.push(path.clone());
                         } else if smallest == "" || *val < smallest.to_owned() {
+                            // We found a new smallest value, so start over
                             smallest = val.clone();
-                            to_process = vec![key.clone()];
+                            to_process = vec![path.clone()];
                         }
                     }
                     None => {
-                        to_delete.push(key.clone());
+                        // Store this for deletion at the end
+                        // since we didn't find anything matching
+                        to_delete.push(path.clone());
                         continue;
                     }
                 }
             }
         }
 
+        // We found nothing remaining with the smallest value
         if !remaining {
             break;
         }
@@ -115,10 +124,12 @@ fn main() {
             *(refs.get_mut(combo[1]).unwrap().get_mut(combo[0]).unwrap()) += 1;
         }
 
+        // Remove the smallest value from each candidate we processsed
         for k in to_process.iter() {
             values.get_mut(k).unwrap().remove(&smallest);
         }
 
+        // Delete the keys which were pending from earlier
         for k in to_delete.iter() {
             values.remove(k);
         }
@@ -127,6 +138,7 @@ fn main() {
     // Clear final spinner
     spinner.finish_and_clear();
 
+    // Filter and sort dependencies
     let mut inds = Vec::new();
     for (k, v) in refs.iter() {
         for (d, i) in v.iter() {
