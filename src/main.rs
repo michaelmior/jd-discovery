@@ -1,3 +1,5 @@
+#![feature(map_first_last)]
+
 use std::collections::{BTreeSet, HashMap};
 use std::io;
 
@@ -6,6 +8,7 @@ use itertools::Itertools;
 
 fn collect_values(
     values: &mut HashMap<String, BTreeSet<String>>,
+    all_values: &mut BTreeSet<String>,
     path: &str,
     value: &json::JsonValue,
 ) {
@@ -15,30 +18,34 @@ fn collect_values(
             let mut new_path: String = path.to_owned();
             new_path.push('.');
             new_path.push_str(dict_key);
-            collect_values(values, &new_path, dict_value);
+            collect_values(values, all_values, &new_path, dict_value);
         }
     } else if value.is_array() {
         // Loop through all array elements and add [] to the path
         for list_value in value.members() {
             let mut new_path: String = path.to_owned();
             new_path.push_str("[]");
-            collect_values(values, &new_path, list_value);
+            collect_values(values, all_values, &new_path, list_value);
         }
     } else if !value.is_null() && (!value.is_string() || !value.is_empty()) {
+        let str_value = value.dump();
+        all_values.insert(str_value.clone());
+
         if !values.contains_key(path) {
             // Create a new set to represent values with this path
             let mut set = BTreeSet::new();
-            set.insert(value.dump());
+            set.insert(str_value);
             values.insert(path.to_owned(), set);
         } else {
             // Add this value to those observed at this path
-            values.get_mut(path).unwrap().insert(value.dump());
+            values.get_mut(path).unwrap().insert(str_value);
         }
     }
 }
 
 fn main() {
     let mut values: HashMap<String, BTreeSet<String>> = HashMap::new();
+    let mut all_values: BTreeSet<String> = BTreeSet::new();
 
     // Initialize spinner
     let mut spinner = ProgressBar::new_spinner().with_message("Reading input…");
@@ -49,7 +56,7 @@ fn main() {
     for line in stdin.lines() {
         let parsed = json::parse(&line.unwrap()).ok().take().unwrap();
         for (key, value) in parsed.entries() {
-            collect_values(&mut values, key, value);
+            collect_values(&mut values, &mut all_values, key, value);
         }
     }
 
@@ -85,40 +92,27 @@ fn main() {
             .template("{prefix} [{elapsed_precise}] {bar} {pos:>7}/{len:7}"),
     );
 
-    loop {
-        let mut smallest: String = "".to_owned();
+    while !all_values.is_empty() {
+        let smallest: String = all_values.pop_first().unwrap();
         let mut to_process = Vec::new();
         let mut to_delete = Vec::new();
-        let mut remaining = false;
 
         // Find the smallest value and which paths need to be processed
-        {
-            for (path, vals) in values.iter() {
-                match vals.iter().next() {
-                    Some(val) => {
-                        remaining = true;
-                        if smallest == *val {
-                            // Add this path to those which must be processed
-                            to_process.push(path.clone());
-                        } else if smallest.is_empty() || *val < smallest {
-                            // We found a new smallest value, so start over
-                            smallest = val.clone();
-                            to_process = vec![path.clone()];
-                        }
-                    }
-                    None => {
-                        // Store this for deletion at the end
-                        // since we didn't find anything matching
-                        to_delete.push(path.clone());
-                        continue;
+        for (path, vals) in values.iter() {
+            match vals.iter().next() {
+                Some(val) => {
+                    if smallest == *val {
+                        // Add this path to those which must be processed
+                        to_process.push(path.clone());
                     }
                 }
+                None => {
+                    // Store this for deletion at the end
+                    // since we didn't find anything matching
+                    to_delete.push(path.clone());
+                    continue;
+                }
             }
-        }
-
-        // We found nothing remaining with the smallest value
-        if !remaining {
-            break;
         }
 
         for combo in to_process.iter().combinations(2) {
