@@ -2,6 +2,7 @@
 
 use std::collections::{BTreeSet, HashMap};
 use std::io;
+use std::time::Instant;
 
 use indicatif::{ProgressBar, ProgressStyle};
 use itertools::Itertools;
@@ -55,6 +56,7 @@ fn main() {
     spinner.enable_steady_tick(100);
 
     // Process input and collect values
+    let mut start = Instant::now();
     let stdin = io::stdin();
     for line in stdin.lines() {
         let parsed = json::parse(&line.unwrap()).ok().take().unwrap();
@@ -62,13 +64,15 @@ fn main() {
     }
 
     // Remove spinner
+    let mut duration = start.elapsed();
     spinner.disable_steady_tick();
-    spinner.finish_with_message("Collected values");
+    spinner.finish_with_message(format!("Collected values in {:?}", duration));
 
     // Start new progress for value counts
     spinner = ProgressBar::new_spinner().with_message("Counting unique values…");
     spinner.enable_steady_tick(100);
 
+    start = Instant::now();
     let mut refs: HashMap<String, HashMap<String, usize>> = HashMap::new();
     let mut value_counts: HashMap<String, usize> = HashMap::new();
     for key in values.keys() {
@@ -83,8 +87,9 @@ fn main() {
     }
 
     // Remove spinner
+    duration = start.elapsed();
     spinner.disable_steady_tick();
-    spinner.finish_with_message("Counted values");
+    spinner.finish_with_message(format!("Counted values in {:?}", duration));
 
     // Start new progress for checking combinations
     spinner = ProgressBar::new(values.len() as u64).with_prefix("Finding dependencies");
