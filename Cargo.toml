@@ -10,6 +10,8 @@ edition = "2018"
 json = "0.12.4"
 itertools = "0.10.3"
 indicatif = "0.16.2"
+roaring = "0.9.0"
+clap = { version = "3.2.16", features = ["derive"] }
 
 [dev-dependencies]
 rusty-hook = "0.11.2"

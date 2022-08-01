@@ -1,15 +1,17 @@
 #![feature(map_first_last)]
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::HashMap;
 use std::io;
 use std::time::Instant;
 
+use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
 use itertools::Itertools;
+use roaring::bitmap::RoaringBitmap;
 
 fn collect_values(
-    values: &mut HashMap<String, BTreeSet<String>>,
-    all_values: &mut BTreeSet<String>,
+    values: &mut HashMap<String, RoaringBitmap>,
+    all_values: &mut HashMap<String, usize>,
     path: &str,
     value: &json::JsonValue,
 ) {
@@ -33,30 +35,49 @@ fn collect_values(
         }
     } else if !value.is_null() && (!value.is_string() || !value.is_empty()) {
         let str_value = value.dump();
-        all_values.insert(str_value.clone());
+        let str_index: usize = match all_values.get(&str_value) {
+            Some(index) => *index,
+            None => {
+                let new_index = all_values.len();
+                all_values.insert(str_value.clone(), new_index);
+
+                new_index
+            }
+        };
 
         if !values.contains_key(path) {
             // Create a new set to represent values with this path
-            let mut set = BTreeSet::new();
-            set.insert(str_value);
+            let mut set = RoaringBitmap::new();
+            set.insert(str_index as u32);
             values.insert(path.to_owned(), set);
         } else {
             // Add this value to those observed at this path
-            values.get_mut(path).unwrap().insert(str_value);
+            values.get_mut(path).unwrap().insert(str_index as u32);
         }
     }
 }
 
+#[derive(Parser, Debug)]
+struct Args {
+    #[clap(short, long, default_value_t = 0.8)]
+    threshold: f64,
+
+    #[clap(short, long, action=clap::ArgAction::SetTrue, default_value_t = false)]
+    approximate: bool,
+}
+
 fn main() {
-    let mut values: HashMap<String, BTreeSet<String>> = HashMap::new();
-    let mut all_values: BTreeSet<String> = BTreeSet::new();
+    let args = Args::parse();
+
+    let mut values: HashMap<String, RoaringBitmap> = HashMap::new();
+    let mut all_values: HashMap<String, usize> = HashMap::new();
 
     // Initialize spinner
     let mut spinner = ProgressBar::new_spinner().with_message("Reading input…");
     spinner.enable_steady_tick(100);
 
     // Process input and collect values
-    let mut start = Instant::now();
+    let start = Instant::now();
     let stdin = io::stdin();
     for line in stdin.lines() {
         let parsed = json::parse(&line.unwrap()).ok().take().unwrap();
@@ -64,32 +85,9 @@ fn main() {
     }
 
     // Remove spinner
-    let mut duration = start.elapsed();
+    let duration = start.elapsed();
     spinner.disable_steady_tick();
     spinner.finish_with_message(format!("Collected values in {:?}", duration));
-
-    // Start new progress for value counts
-    spinner = ProgressBar::new_spinner().with_message("Counting unique values…");
-    spinner.enable_steady_tick(100);
-
-    start = Instant::now();
-    let mut refs: HashMap<String, HashMap<String, usize>> = HashMap::new();
-    let mut value_counts: HashMap<String, usize> = HashMap::new();
-    for key in values.keys() {
-        let mut map = HashMap::new();
-        for key2 in values.keys() {
-            if key2 != key {
-                map.insert(key2.to_owned(), 0);
-            }
-        }
-        refs.insert(key.to_owned(), map);
-        value_counts.insert(key.to_owned(), values[key].len());
-    }
-
-    // Remove spinner
-    duration = start.elapsed();
-    spinner.disable_steady_tick();
-    spinner.finish_with_message(format!("Counted values in {:?}", duration));
 
     // Start new progress for checking combinations
     spinner = ProgressBar::new(values.len() as u64).with_prefix("Finding dependencies");
@@ -98,67 +96,33 @@ fn main() {
             .template("{prefix} [{elapsed_precise}] {bar} {pos:>7}/{len:7}"),
     );
 
-    while !all_values.is_empty() {
-        let smallest: String = all_values.pop_first().unwrap();
-        let mut to_process = Vec::new();
-        let mut to_delete = Vec::new();
+    // Discover dependencies
+    let mut inds = Vec::new();
+    for (key1, key2) in values.keys().tuple_combinations::<(_, _)>() {
+        let values1 = values.get(key1).unwrap();
+        let values2 = values.get(key2).unwrap();
+        let intersection = values1.intersection_len(values2);
 
-        // Find the smallest value and which paths need to be processed
-        for (path, vals) in values.iter() {
-            match vals.iter().next() {
-                Some(val) => {
-                    if smallest == *val {
-                        // Add this path to those which must be processed
-                        to_process.push(path.clone());
-                    }
-                }
-                None => {
-                    // Store this for deletion at the end
-                    // since we didn't find anything matching
-                    to_delete.push(path.clone());
-                    continue;
-                }
+        if args.approximate {
+            if (intersection as f64) / (values1.len() as f64) >= args.threshold {
+                inds.push((key1, key2));
             }
-        }
 
-        for combo in to_process.iter().combinations(2) {
-            *(refs.get_mut(combo[0]).unwrap().get_mut(combo[1]).unwrap()) += 1;
-            *(refs.get_mut(combo[1]).unwrap().get_mut(combo[0]).unwrap()) += 1;
-        }
-
-        // Remove the smallest value from each candidate we processsed
-        for k in to_process.iter() {
-            values.get_mut(k).unwrap().remove(&smallest);
-        }
-
-        // Delete the keys which were pending from earlier
-        if !to_delete.is_empty() {
-            spinner.inc(to_delete.len() as u64);
-        }
-        for k in to_delete.iter() {
-            values.remove(k);
+            if (intersection as f64) / (values2.len() as f64) >= args.threshold {
+                inds.push((key2, key1));
+            }
+        } else {
+            if values1.is_subset(values2) {
+                inds.push((key1, key2));
+            }
+            if values2.is_subset(values1) {
+                inds.push((key2, key1));
+            }
         }
     }
 
     // Clear final spinner
     spinner.finish_and_clear();
-
-    // Filter and sort dependencies
-    let mut inds = Vec::new();
-    for (k, v) in refs.iter() {
-        for (d, i) in v.iter() {
-            let frac = if value_counts[k] > 0 {
-                (*i as f64) * 1.0 / (value_counts[k] as f64)
-            } else {
-                0.0
-            };
-
-            if frac > 0.8 {
-                inds.push((k, d, frac));
-            }
-        }
-    }
-    inds.sort_unstable_by(|a, b| a.2.partial_cmp(&b.2).unwrap());
 
     for ind in inds.iter() {
         println!("{:?}", ind);
@@ -174,38 +138,38 @@ mod tests {
     #[test]
     fn it_collects_object_values() {
         let obj = object! {a: 3};
-        let mut values: HashMap<String, BTreeSet<String>> = HashMap::new();
-        let mut all_values: BTreeSet<String> = BTreeSet::new();
+        let mut values: HashMap<String, RoaringBitmap> = HashMap::new();
+        let mut all_values: HashMap<String, usize> = HashMap::new();
 
         collect_values(&mut values, &mut all_values, "", &obj);
 
-        assert!(values.get("a").unwrap().contains("3"));
-        assert!(all_values.contains("3"));
+        assert!(values.get("a").unwrap().contains(0));
+        assert!(all_values.contains_key("3"));
     }
 
     #[test]
     fn it_collects_nested_object_values() {
         let obj = object! {a: {b: 3}};
-        let mut values: HashMap<String, BTreeSet<String>> = HashMap::new();
-        let mut all_values: BTreeSet<String> = BTreeSet::new();
+        let mut values: HashMap<String, RoaringBitmap> = HashMap::new();
+        let mut all_values: HashMap<String, usize> = HashMap::new();
 
         collect_values(&mut values, &mut all_values, "", &obj);
 
-        assert!(values.get("a.b").unwrap().contains("3"));
-        assert!(all_values.contains("3"));
+        assert!(values.get("a.b").unwrap().contains(0));
+        assert!(all_values.contains_key("3"));
     }
 
     #[test]
     fn it_collects_array_values() {
         let obj = array![3, 4];
-        let mut values: HashMap<String, BTreeSet<String>> = HashMap::new();
-        let mut all_values: BTreeSet<String> = BTreeSet::new();
+        let mut values: HashMap<String, RoaringBitmap> = HashMap::new();
+        let mut all_values: HashMap<String, usize> = HashMap::new();
 
         collect_values(&mut values, &mut all_values, "", &obj);
 
-        assert!(values.get("[]").unwrap().contains("3"));
-        assert!(values.get("[]").unwrap().contains("4"));
-        assert!(all_values.contains("3"));
-        assert!(all_values.contains("4"));
+        assert!(values.get("[]").unwrap().contains(0));
+        assert!(values.get("[]").unwrap().contains(1));
+        assert!(all_values.contains_key("3"));
+        assert!(all_values.contains_key("4"));
     }
 }
