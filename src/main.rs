@@ -7,6 +7,7 @@ use std::time::Instant;
 use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
 use itertools::Itertools;
+use rayon::prelude::*;
 use roaring::bitmap::RoaringBitmap;
 
 fn collect_values(
@@ -97,29 +98,36 @@ fn main() {
     );
 
     // Discover dependencies
-    let mut inds = Vec::new();
-    for (key1, key2) in values.keys().tuple_combinations::<(_, _)>() {
-        let values1 = values.get(key1).unwrap();
-        let values2 = values.get(key2).unwrap();
-        let intersection = values1.intersection_len(values2);
+    let inds: Vec<_> = values
+        .keys()
+        .tuple_combinations::<(_, _)>()
+        .par_bridge()
+        .flat_map(|(key1, key2)| {
+            let mut inds = Vec::new();
+            let values1 = values.get(key1).unwrap();
+            let values2 = values.get(key2).unwrap();
+            let intersection = values1.intersection_len(values2);
 
-        if args.approximate {
-            if (intersection as f64) / (values1.len() as f64) >= args.threshold {
-                inds.push((key1, key2));
+            if args.approximate {
+                if (intersection as f64) / (values1.len() as f64) >= args.threshold {
+                    inds.push((key1, key2));
+                }
+
+                if (intersection as f64) / (values2.len() as f64) >= args.threshold {
+                    inds.push((key2, key1));
+                }
+            } else {
+                if values1.is_subset(values2) {
+                    inds.push((key1, key2));
+                }
+                if values2.is_subset(values1) {
+                    inds.push((key2, key1));
+                }
             }
 
-            if (intersection as f64) / (values2.len() as f64) >= args.threshold {
-                inds.push((key2, key1));
-            }
-        } else {
-            if values1.is_subset(values2) {
-                inds.push((key1, key2));
-            }
-            if values2.is_subset(values1) {
-                inds.push((key2, key1));
-            }
-        }
-    }
+            inds
+        })
+        .collect();
 
     // Clear final spinner
     spinner.finish_and_clear();
