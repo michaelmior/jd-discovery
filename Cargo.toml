@@ -8,11 +8,15 @@ edition = "2018"
 name = "jindy500-ind"
 path = "src/ind.rs"
 
+[[bin]]
+name = "jindy500-fd"
+path = "src/fd.rs"
+
 [dependencies]
 json = "0.12.4"
 itertools = "0.10.3"
 indicatif = "0.16.2"
-roaring = "0.9.0"
+roaring = { git = "https://github.com/michaelmior/roaring-rs", branch = "master" }
 clap = { version = "3.2.16", features = ["derive"] }
 rayon = "1.5.3"
 
