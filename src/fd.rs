@@ -314,7 +314,7 @@ fn check_included(x: &RoaringBitmap, level: &Level) -> bool {
         check_bitmap = x.clone() - check_bitmap;
 
         // Check if the level contains X \ {A}, if not, break
-        if level.contains_key(&check_bitmap) {
+        if !level.contains_key(&check_bitmap) {
             included = false;
             break;
         }
