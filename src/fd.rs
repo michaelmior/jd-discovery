@@ -341,7 +341,7 @@ fn prefix_blocks(level: &Level) -> Vec<Vec<RoaringBitmap>> {
         let last_block = blocks.last().unwrap().last().unwrap();
         // If only one element differs and it's
         // the last then we have a common prefix
-        if last_block.intersection_len(&x) == 1 && last_block.max() != x.max() {
+        if last_block.difference_len(&x) == 1 && last_block.max() != x.max() {
             // Add this element to the current block
             blocks.last_mut().unwrap().push(x);
         } else {
