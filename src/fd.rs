@@ -252,19 +252,18 @@ fn main() {
 
         // Calculate dependencies at this level of the lattice
         compute_dependencies(&level0, &mut level1, &bitmaps, &paths, max_lineno as u32);
-        // println!("BEFORE PRUNING ");
-        // println!("{:?}", level1);
         prune(&mut level1, &bitmaps, &paths, max_lineno as u32);
 
+        // Pruning may have left a level empty, so we can't continue
+        if level1.is_empty() {
+            break;
+        }
+
         // Generate the next lattice level
-        // println!("AFTER PRUNING ");
-        // println!("{:?}", level1);
         level0 = level1;
         level1 = generate_next_level(&level0, &mut bitmaps);
-        // println!("NEXT LEVEL");
-        // println!("{:?}", level1);
 
-        // Stop at this level of the tree
+        // We may still not have valid levels to continue
         if level1.is_empty() {
             break;
         }
@@ -280,7 +279,6 @@ fn process_block(
     // Generate all combinations of elements in the prefix block
     for (y, z) in k.iter().tuple_combinations::<(_, _)>() {
         let x = y | z;
-        // println!("COMBO {:?} {:?} {:?}", x, y, z);
 
         // Check if all required subsets are contained in the lattice
         if check_included(&x, level) {
@@ -332,7 +330,6 @@ fn prefix_blocks(level: &Level) -> Vec<Vec<RoaringBitmap>> {
             &b.iter().collect::<Vec<u32>>(),
         )
     });
-    // println!("SORTED {:?}", sorted_levels);
 
     // Start with the first block as the first sorted element
     let mut blocks = vec![vec![sorted_levels.next().unwrap()]];
@@ -356,9 +353,8 @@ fn prefix_blocks(level: &Level) -> Vec<Vec<RoaringBitmap>> {
 fn generate_next_level(level: &Level, bitmaps: &mut Bitmaps) -> Level {
     let mut new_level = HashMap::new();
     let blocks = prefix_blocks(level);
-    // println!("BLOCKS {:?}", blocks);
+
     for k in blocks {
-        // println!("BUILDING BLOCK {:?}", k);
         process_block(level, &mut new_level, bitmaps, k);
     }
 
@@ -402,12 +398,10 @@ fn prune(level: &mut Level, bitmaps: &Bitmaps, paths: &HashMap<u32, String>, max
     for (x, l) in level.iter() {
         // If C+(X) is empty, we can remove from the lattice
         if l.bitmap.is_empty() {
-            // println!("{:?} IS EMPTY", x);
             to_remove.push(x.clone());
             continue;
         }
 
-        // println!("CHECKING BITMAP FOR {:?}", x);
         if l.valid && check_bitmap(bitmaps.get(&x).unwrap(), max_lineno) {
             for a in (l.bitmap.clone() - x).iter() {
                 let mut first = true;
@@ -435,7 +429,6 @@ fn prune(level: &mut Level, bitmaps: &Bitmaps, paths: &HashMap<u32, String>, max
                     all.insert_range(0..paths.len() as u32);
 
                     let new_bitmap = l.bitmap.clone() - (RoaringBitmap::from(a) | (all - x));
-                    // println!("INVALIDATING {:?}, REPLACING BITMAP WITH {:?}", x, new_bitmap);
                     invalidate.push((x.clone(), new_bitmap));
                 }
             }
