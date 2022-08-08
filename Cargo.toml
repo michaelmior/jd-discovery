@@ -15,7 +15,7 @@ path = "src/fd.rs"
 [dependencies]
 json = "0.12.4"
 itertools = "0.10.3"
-indicatif = "0.16.2"
+indicatif = "0.17.0"
 roaring = { git = "https://github.com/michaelmior/roaring-rs", branch = "master" }
 clap = { version = "3.2.16", features = ["derive"] }
 rayon = "1.5.3"
