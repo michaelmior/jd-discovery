@@ -135,7 +135,7 @@ fn initialize_bitmaps(
     max_lineno: u32,
 ) -> HashMap<RoaringBitmap, RoaringBitmap> {
     let mut all_set = RoaringBitmap::new();
-    all_set.insert_range(0..max_lineno as u32);
+    all_set.insert_range(0..index(max_lineno - 1, max_lineno - 2) + 1);
 
     let mut bitmaps = HashMap::new();
     bitmaps.insert(RoaringBitmap::new(), all_set);
@@ -195,6 +195,7 @@ fn main() {
         );
         max_lineno = lineno;
     }
+    max_lineno += 1;
 
     // Remove spinner
     let mut duration = start.elapsed();
