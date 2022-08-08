@@ -425,8 +425,6 @@ fn prune(level: &mut Level, bitmaps: &Bitmaps, paths: &HashMap<u32, String>, max
                     }
                 }
 
-                // print!("PRUNE CHECKING ");
-                // print_dependency(&x, a, paths);
                 if intersect.contains(a) {
                     print_dependency(x, a, paths);
                     let mut all = RoaringBitmap::new();
@@ -473,8 +471,6 @@ fn compute_dependencies(
             let lhs = x - rhs.clone(); // X \ {A}
 
             // Check validity of X \ {A} -> A
-            // print!("CHECKING ");
-            // print_dependency(&lhs, a, paths);
             if check_bitmap(
                 &(bitmaps.get(&lhs).unwrap() - bitmaps.get(&rhs).unwrap()),
                 max_lineno,
