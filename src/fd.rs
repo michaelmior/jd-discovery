@@ -385,6 +385,7 @@ fn print_dependency(lhs: &RoaringBitmap, rhs: u32, paths: &HashMap<u32, String>)
         "{:?} -> {}",
         lhs.iter()
             .map(|b| paths.get(&b).unwrap())
+            .sorted()
             .collect::<Vec<&String>>(),
         paths.get(&rhs).unwrap()
     );
