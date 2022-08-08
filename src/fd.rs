@@ -285,7 +285,9 @@ fn process_block(
         if check_included(&x, level) {
             let valid = if level.contains_key(&y) && level.contains_key(&z) {
                 // Generate the new bitmap for this potential LHS
-                bitmaps.insert(x.clone(), y & z);
+                let y_bitmap = bitmaps.get(&y).unwrap();
+                let z_bitmap = bitmaps.get(&z).unwrap();
+                bitmaps.insert(x.clone(), y_bitmap & z_bitmap);
                 true
             } else {
                 false
