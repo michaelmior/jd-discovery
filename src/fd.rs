@@ -443,7 +443,7 @@ fn prune(level: &mut Level, bitmaps: &Bitmaps, paths: &HashMap<u32, String>, max
         element.valid = false;
     }
 
-    // Remove uneeded lattivce lements
+    // Remove uneeded lattice elements
     for x in to_remove {
         level.remove(&x);
     }
