@@ -422,6 +422,7 @@ fn prune(level: &mut Level, bitmaps: &Bitmaps, paths: &HashMap<u32, String>, max
                         }
                     } else {
                         intersect = RoaringBitmap::new();
+                        break;
                     }
                 }
 
