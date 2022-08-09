@@ -35,7 +35,7 @@ fn collect_values(
         // Loop through all array elements and add [] to the path
         for list_value in value.members() {
             let mut new_path: String = path.to_owned();
-            new_path.push_str("[]");
+            new_path.push_str("[*]");
             collect_values(values, all_values, &new_path, list_value);
         }
     } else if !value.is_null() && (!value.is_string() || !value.is_empty()) {
@@ -64,7 +64,7 @@ fn collect_values(
 
 #[derive(Parser, Debug)]
 struct Args {
-    #[clap(short, long, default_value_t = 0.8)]
+    #[clap(short, long, default_value_t = 0.9)]
     threshold: f64,
 
     #[clap(short, long, action=clap::ArgAction::SetTrue, default_value_t = false)]
