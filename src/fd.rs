@@ -87,7 +87,7 @@ fn collect_values(
             load_partitions.insert(path.to_owned(), HashMap::new());
         }
 
-        // Add a hash map from values to document numbers of not created
+        // Add a hash map from values to document numbers if not created
         let path_map = load_partitions.get_mut(path).unwrap();
         if !path_map.contains_key(&str_index) {
             path_map.insert(str_index.to_owned(), RoaringBitmap::new());
