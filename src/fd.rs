@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::io;
+use std::io::{self, BufRead};
 use std::iter::FromIterator;
 use std::time::Instant;
 
@@ -182,7 +182,8 @@ fn main() {
     let start = Instant::now();
     let stdin = io::stdin();
     let mut max_lineno = 0;
-    for (lineno, line) in stdin.lines().enumerate() {
+    let lines = stdin.lock().lines().enumerate();
+    for (lineno, line) in lines {
         let parsed = json::parse(&line.unwrap()).ok().take().unwrap();
         collect_values(
             lineno,
@@ -283,10 +284,10 @@ fn process_block(
 
         // Check if all required subsets are contained in the lattice
         if check_included(&x, level) {
-            let valid = if level.contains_key(&y) && level.contains_key(&z) {
+            let valid = if level.contains_key(y) && level.contains_key(z) {
                 // Generate the new bitmap for this potential LHS
-                let y_bitmap = bitmaps.get(&y).unwrap();
-                let z_bitmap = bitmaps.get(&z).unwrap();
+                let y_bitmap = bitmaps.get(y).unwrap();
+                let z_bitmap = bitmaps.get(z).unwrap();
                 bitmaps.insert(x.clone(), y_bitmap & z_bitmap);
                 true
             } else {
@@ -327,7 +328,7 @@ fn check_included(x: &RoaringBitmap, level: &Level) -> bool {
 fn prefix_blocks(level: &Level) -> Vec<Vec<RoaringBitmap>> {
     // Sort bitmaps representing lattice levels by converting
     // to vectors since RoaringBitmap does not implement Ord
-    let mut sorted_levels = level.keys().map(|k| k.clone()).sorted_by(|a, b| {
+    let mut sorted_levels = level.keys().cloned().sorted_by(|a, b| {
         Ord::cmp(
             &a.iter().collect::<Vec<u32>>(),
             &b.iter().collect::<Vec<u32>>(),
@@ -406,7 +407,7 @@ fn prune(level: &mut Level, bitmaps: &Bitmaps, paths: &HashMap<u32, String>, max
             continue;
         }
 
-        if l.valid && check_bitmap(bitmaps.get(&x).unwrap(), max_lineno) {
+        if l.valid && check_bitmap(bitmaps.get(x).unwrap(), max_lineno) {
             for a in (l.bitmap.clone() - x).iter() {
                 let mut first = true;
                 let mut intersect = RoaringBitmap::new();
@@ -418,7 +419,7 @@ fn prune(level: &mut Level, bitmaps: &Bitmaps, paths: &HashMap<u32, String>, max
                             first = false;
                             intersect = c;
                         } else {
-                            intersect = intersect & c;
+                            intersect &= c;
                         }
                     } else {
                         intersect = RoaringBitmap::new();
@@ -439,7 +440,7 @@ fn prune(level: &mut Level, bitmaps: &Bitmaps, paths: &HashMap<u32, String>, max
     }
 
     for (x, new_bitmap) in invalidate.iter() {
-        let mut element = level.get_mut(&x).unwrap();
+        let mut element = level.get_mut(x).unwrap();
         element.bitmap = new_bitmap.clone();
         element.valid = false;
     }
