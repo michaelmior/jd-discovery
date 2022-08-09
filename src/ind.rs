@@ -1,5 +1,9 @@
 #![feature(map_first_last)]
 
+mod flatten;
+
+use flatten::flatten_json;
+
 use std::collections::HashMap;
 use std::io;
 use std::time::Instant;
@@ -65,6 +69,9 @@ struct Args {
 
     #[clap(short, long, action=clap::ArgAction::SetTrue, default_value_t = false)]
     approximate: bool,
+
+    #[clap(short='s', long="static", action=clap::ArgAction::SetFalse, default_value_t = true)]
+    dynamic: bool,
 }
 
 fn main() {
@@ -73,7 +80,7 @@ fn main() {
     let mut values: HashMap<String, RoaringBitmap> = HashMap::new();
     let mut all_values: HashMap<String, usize> = HashMap::new();
 
-    // Initialize spinner
+    // // Initialize spinner
     let mut spinner = ProgressBar::new_spinner().with_message("Reading input…");
     spinner.enable_steady_tick(100);
 
@@ -83,7 +90,14 @@ fn main() {
     for line in stdin.lines() {
         let parsed =
             json::parse(&line.expect("Error reading input")).expect("Found invalid JSON line");
-        collect_values(&mut values, &mut all_values, "", &parsed);
+
+        if args.dynamic {
+            collect_values(&mut values, &mut all_values, "", &parsed);
+        } else {
+            for obj in flatten_json(&parsed) {
+                collect_values(&mut values, &mut all_values, "", &obj);
+            }
+        }
     }
 
     // Remove spinner
