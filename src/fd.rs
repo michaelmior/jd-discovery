@@ -1,8 +1,13 @@
+mod flatten;
+
+use flatten::flatten_json;
+
 use std::collections::HashMap;
 use std::io::{self, BufRead};
 use std::iter::FromIterator;
 use std::time::Instant;
 
+use clap::Parser;
 use indicatif::ProgressBar;
 use itertools::Itertools;
 use roaring::bitmap::RoaringBitmap;
@@ -168,7 +173,21 @@ macro_rules! hashcomp {
     };
 }
 
+#[derive(Parser, Debug)]
+struct Args {
+    #[clap(short, long, default_value_t = 0.8)]
+    threshold: f64,
+
+    #[clap(short, long, action=clap::ArgAction::SetTrue, default_value_t = false)]
+    approximate: bool,
+
+    #[clap(short='s', long="static", action=clap::ArgAction::SetFalse, default_value_t = true)]
+    dynamic: bool,
+}
+
 fn main() {
+    let args = Args::parse();
+
     let mut all_values: HashMap<String, usize> = HashMap::new();
     let mut constants: HashMap<String, bool> = HashMap::new();
     let mut first_values: HashMap<String, usize> = HashMap::new();
@@ -186,15 +205,29 @@ fn main() {
     for (lineno, line) in lines {
         let parsed =
             json::parse(&line.expect("Error reading input")).expect("Found invalid JSON line");
-        collect_values(
-            lineno,
-            &mut all_values,
-            &mut constants,
-            &mut first_values,
-            &mut load_partitions,
-            "",
-            &parsed,
-        );
+        if args.dynamic {
+            collect_values(
+                lineno,
+                &mut all_values,
+                &mut constants,
+                &mut first_values,
+                &mut load_partitions,
+                "",
+                &parsed,
+            );
+        } else {
+            for obj in flatten_json(&parsed) {
+                collect_values(
+                    lineno,
+                    &mut all_values,
+                    &mut constants,
+                    &mut first_values,
+                    &mut load_partitions,
+                    "",
+                    &obj,
+                );
+            }
+        }
         max_lineno = lineno;
     }
     max_lineno += 1;
@@ -254,8 +287,23 @@ fn main() {
         eprintln!("Starting level {}...", i + 1);
 
         // Calculate dependencies at this level of the lattice
-        compute_dependencies(&level0, &mut level1, &bitmaps, &paths, max_lineno as u32);
-        prune(&mut level1, &bitmaps, &paths, max_lineno as u32);
+        compute_dependencies(
+            &level0,
+            &mut level1,
+            &bitmaps,
+            &paths,
+            max_lineno as u32,
+            args.approximate,
+            args.threshold,
+        );
+        prune(
+            &mut level1,
+            &bitmaps,
+            &paths,
+            max_lineno as u32,
+            args.approximate,
+            args.threshold,
+        );
 
         // Pruning may have left a level empty, so we can't continue
         if level1.is_empty() {
@@ -366,7 +414,12 @@ fn generate_next_level(level: &Level, bitmaps: &mut Bitmaps) -> Level {
     new_level
 }
 
-fn check_bitmap(bitmap: &RoaringBitmap, max_lineno: u32) -> bool {
+fn check_bitmap(
+    bitmap: &RoaringBitmap,
+    max_lineno: u32,
+    approximate: bool,
+    threshold: f64,
+) -> bool {
     let mut violations = RoaringBitmap::new();
     for index in bitmap {
         // Get the index of the original paths
@@ -380,8 +433,8 @@ fn check_bitmap(bitmap: &RoaringBitmap, max_lineno: u32) -> bool {
     }
 
     // Check if the violations are below a given threshold
-    let threshold = 0.99;
-    (violations.len() as f64) / (max_lineno as f64) < (1.0 - threshold)
+    (approximate && violations.is_empty())
+        || (violations.len() as f64) / (max_lineno as f64) < (1.0 - threshold)
 }
 
 fn print_dependency(lhs: &RoaringBitmap, rhs: u32, paths: &HashMap<u32, String>) {
@@ -397,7 +450,14 @@ fn print_dependency(lhs: &RoaringBitmap, rhs: u32, paths: &HashMap<u32, String>)
 }
 
 /// Implements the PRUNE procuedure from TANE
-fn prune(level: &mut Level, bitmaps: &Bitmaps, paths: &HashMap<u32, String>, max_lineno: u32) {
+fn prune(
+    level: &mut Level,
+    bitmaps: &Bitmaps,
+    paths: &HashMap<u32, String>,
+    max_lineno: u32,
+    approximate: bool,
+    threshold: f64,
+) {
     let mut to_remove = Vec::new();
     let mut invalidate = Vec::new();
 
@@ -408,7 +468,7 @@ fn prune(level: &mut Level, bitmaps: &Bitmaps, paths: &HashMap<u32, String>, max
             continue;
         }
 
-        if l.valid && check_bitmap(bitmaps.get(x).unwrap(), max_lineno) {
+        if l.valid && check_bitmap(bitmaps.get(x).unwrap(), max_lineno, approximate, threshold) {
             for a in (l.bitmap.clone() - x).iter() {
                 let mut first = true;
                 let mut intersect = RoaringBitmap::new();
@@ -458,6 +518,8 @@ fn compute_dependencies(
     bitmaps: &Bitmaps,
     paths: &HashMap<u32, String>,
     max_lineno: u32,
+    approximate: bool,
+    threshold: f64,
 ) {
     initialize_cplus_for_level(level0, level1);
 
@@ -477,6 +539,8 @@ fn compute_dependencies(
             if check_bitmap(
                 &(bitmaps.get(&lhs).unwrap() - bitmaps.get(&rhs).unwrap()),
                 max_lineno,
+                approximate,
+                threshold,
             ) {
                 print_dependency(&lhs, a, paths);
 
