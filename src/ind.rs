@@ -81,7 +81,8 @@ fn main() {
     let start = Instant::now();
     let stdin = io::stdin();
     for line in stdin.lines() {
-        let parsed = json::parse(&line.unwrap()).ok().take().unwrap();
+        let parsed =
+            json::parse(&line.expect("Error reading input")).expect("Found invalid JSON line");
         collect_values(&mut values, &mut all_values, "", &parsed);
     }
 

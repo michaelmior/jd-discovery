@@ -184,7 +184,8 @@ fn main() {
     let mut max_lineno = 0;
     let lines = stdin.lock().lines().enumerate();
     for (lineno, line) in lines {
-        let parsed = json::parse(&line.unwrap()).ok().take().unwrap();
+        let parsed =
+            json::parse(&line.expect("Error reading input")).expect("Found invalid JSON line");
         collect_values(
             lineno,
             &mut all_values,
