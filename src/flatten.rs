@@ -12,12 +12,11 @@ fn merge_into<'a>(
     dest
 }
 
-pub fn flatten_json(json: &JsonValue) -> Vec<JsonValue> {
+pub fn flatten_json(json: &JsonValue) -> impl Iterator<Item = JsonValue> {
     let path = "";
     flatten_json_with_path(json, path)
-        .iter()
-        .map(|o| JsonValue::Object(o.to_owned()))
-        .collect()
+        .into_iter()
+        .map(JsonValue::Object)
 }
 
 pub fn flatten_json_with_path(json: &JsonValue, path: &str) -> Vec<json::object::Object> {
