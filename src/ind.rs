@@ -190,8 +190,8 @@ mod tests {
 
         collect_values(&mut values, &mut all_values, "", &obj);
 
-        assert!(values.get("[]").unwrap().contains(0));
-        assert!(values.get("[]").unwrap().contains(1));
+        assert!(values.get("[*]").unwrap().contains(0));
+        assert!(values.get("[*]").unwrap().contains(1));
         assert!(all_values.contains_key("3"));
         assert!(all_values.contains_key("4"));
     }
