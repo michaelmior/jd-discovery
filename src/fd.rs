@@ -261,7 +261,7 @@ fn main() {
     // Remove spinner
     duration = start.elapsed();
     spinner.disable_steady_tick();
-    spinner.finish_with_message(format!("Collected values in {:?}", duration));
+    spinner.finish_with_message(format!("Built bitmaps in {:?}", duration));
 
     // Construct a bitmap reprenting all paths
     let mut all = RoaringBitmap::new();
