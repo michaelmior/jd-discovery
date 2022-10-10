@@ -12,6 +12,10 @@ path = "src/ind.rs"
 name = "jd-fd"
 path = "src/fd.rs"
 
+[[bin]]
+name = "jd-flatten"
+path = "src/flatten_main.rs"
+
 [dependencies]
 json = "0.12.4"
 itertools = "0.10.3"
