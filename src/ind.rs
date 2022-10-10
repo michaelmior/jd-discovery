@@ -1,5 +1,5 @@
 #![feature(map_first_last)]
-
+#[forbid(clippy::missing_docs_in_private_items)]
 mod flatten;
 
 use flatten::flatten_json;

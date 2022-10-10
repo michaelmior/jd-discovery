@@ -1,6 +1,9 @@
+//! Functions for flattening nested JSON into simple unnested key-value objects
+
 use itertools::Itertools;
 use json::JsonValue;
 
+/// Add everything in the `src` object into `dest`
 fn merge_into<'a>(
     dest: &'a mut json::object::Object,
     src: &json::object::Object,
@@ -12,13 +15,15 @@ fn merge_into<'a>(
     dest
 }
 
+/// Flatten a JSON document into an iterator of unnested values
 pub fn flatten_json(json: &JsonValue) -> impl Iterator<Item = JsonValue> + '_ {
     flatten_json_with_path(json, "".to_string())
         .into_iter()
         .map(JsonValue::Object)
 }
 
-pub fn flatten_json_with_path(
+/// Flatten a JSON value with a particular prefix
+fn flatten_json_with_path(
     json: &JsonValue,
     path: String,
 ) -> Box<dyn Iterator<Item = json::object::Object> + '_> {
