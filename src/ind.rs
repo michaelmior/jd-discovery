@@ -6,7 +6,7 @@ use flatten::flatten_json;
 
 use std::collections::HashMap;
 use std::io;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
@@ -82,7 +82,7 @@ fn main() {
 
     // // Initialize spinner
     let mut spinner = ProgressBar::new_spinner().with_message("Reading input…");
-    spinner.enable_steady_tick(100);
+    spinner.enable_steady_tick(Duration::from_millis(100));
 
     // Process input and collect values
     let start = Instant::now();
@@ -108,8 +108,8 @@ fn main() {
     // Start new progress for checking combinations
     spinner = ProgressBar::new(values.len() as u64).with_prefix("Finding dependencies");
     spinner.set_style(
-        ProgressStyle::default_bar()
-            .template("{prefix} [{elapsed_precise}] {bar} {pos:>7}/{len:7}"),
+        ProgressStyle::with_template("{prefix} [{elapsed_precise}] {bar} {pos:>7}/{len:7}")
+            .unwrap(),
     );
 
     // Discover dependencies
