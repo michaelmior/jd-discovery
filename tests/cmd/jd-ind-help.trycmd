@@ -1,0 +1,11 @@
+```console
+$ jd-ind --help
+Usage: jd-ind[EXE] [OPTIONS]
+
+Options:
+  -t, --threshold <THRESHOLD>  [default: 0.9]
+  -a, --approximate            
+  -s, --static                 
+  -h, --help                   Print help information
+
+```
