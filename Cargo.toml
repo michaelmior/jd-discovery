@@ -1,15 +1,15 @@
 [package]
-name = "jindy500"
+name = "jd-discovery"
 version = "0.1.0"
-authors = ["Michael Mior <mmior@cs.rit.edu>"]
+authors = ["Michael Mior <mmior@mail.rit.edu>"]
 edition = "2018"
 
 [[bin]]
-name = "jindy500-ind"
+name = "jd-ind"
 path = "src/ind.rs"
 
 [[bin]]
-name = "jindy500-fd"
+name = "jd-fd"
 path = "src/fd.rs"
 
 [dependencies]
