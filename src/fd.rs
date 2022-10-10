@@ -6,7 +6,7 @@ use flatten::flatten_json;
 use std::collections::HashMap;
 use std::io::{self, BufRead};
 use std::iter::FromIterator;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use clap::Parser;
 use indicatif::ProgressBar;
@@ -196,7 +196,7 @@ fn main() {
 
     // Initialize spinner
     let mut spinner = ProgressBar::new_spinner().with_message("Reading input…");
-    spinner.enable_steady_tick(100);
+    spinner.enable_steady_tick(Duration::from_millis(100));
 
     // Process input and collect values
     let start = Instant::now();
@@ -247,7 +247,7 @@ fn main() {
 
     // Reinitialize spinner
     spinner = ProgressBar::new_spinner().with_message("Building bitmaps…");
-    spinner.enable_steady_tick(100);
+    spinner.enable_steady_tick(Duration::from_millis(100));
 
     // Build a map from all paths to an integer index
     let paths = load_partitions
