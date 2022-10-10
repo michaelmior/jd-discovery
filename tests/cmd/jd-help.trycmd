@@ -2,7 +2,7 @@
 $ jd --help
 Fast dependency discovery on nested JSON data
 
-Usage: jd <COMMAND>
+Usage: jd[EXE] <COMMAND>
 
 Commands:
   fd       Functional dependency discovery
