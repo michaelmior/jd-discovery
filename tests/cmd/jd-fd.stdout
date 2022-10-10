@@ -1,0 +1,7 @@
+["TA"] -> Lecture
+["TA"] -> Student ID
+["TA"] -> Semester
+["Semester"] -> Student ID
+["Student ID"] -> Semester
+["Lecture", "Student ID"] -> TA
+["Lecture", "Semester"] -> TA
