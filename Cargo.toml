@@ -27,7 +27,7 @@ json = "0.12.4"
 itertools = "0.10.5"
 indicatif = "0.17.1"
 roaring = { git = "https://github.com/michaelmior/roaring-rs", branch = "hashable" }
-clap = { version = "3.2.16", features = ["derive"] }
+clap = { version = "4.0.12", features = ["derive"] }
 rayon = "1.5.3"
 
 [dev-dependencies]
