@@ -2,7 +2,7 @@
 name = "jd-discovery"
 version = "0.1.0"
 authors = ["Michael Mior <mmior@mail.rit.edu>"]
-edition = "2018"
+edition = "2021"
 
 [[bin]]
 name = "jd-ind"
