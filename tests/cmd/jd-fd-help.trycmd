@@ -1,11 +1,14 @@
 ```console
-$ jd-fd --help
-Usage: jd-fd[EXE] [OPTIONS]
+$ jd fd --help
+Functional dependency discovery
+
+Usage: jd[EXE] fd [OPTIONS]
 
 Options:
-  -t, --threshold <THRESHOLD>  [default: 0.9]
-  -a, --approximate            
-  -s, --static                 
+  -t, --threshold <THRESHOLD>  Threshold for approximate discovery [default: 0.9]
+  -a, --approximate            Enable approximate discovery
+  -s, --static                 Use static discovery
   -h, --help                   Print help information
+  -V, --version                Print version information
 
 ```

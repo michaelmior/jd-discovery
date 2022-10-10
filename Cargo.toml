@@ -11,16 +11,8 @@ keywords = ["json", "dependency"]
 categories = ["command-line-utilities", "database"]
 
 [[bin]]
-name = "jd-ind"
-path = "src/ind.rs"
-
-[[bin]]
-name = "jd-fd"
-path = "src/fd.rs"
-
-[[bin]]
-name = "jd-flatten"
-path = "src/flatten_main.rs"
+name = "jd"
+path = "src/main.rs"
 
 [dependencies]
 json = "0.12.4"

@@ -1,14 +1,11 @@
-#[forbid(clippy::missing_docs_in_private_items)]
-mod flatten;
-
-use flatten::flatten_json;
+use crate::flatten::flatten_json;
 
 use std::collections::HashMap;
 use std::io::{self, BufRead};
 use std::iter::FromIterator;
 use std::time::{Duration, Instant};
 
-use clap::Parser;
+use clap::Args;
 use indicatif::ProgressBar;
 use itertools::Itertools;
 use roaring::bitmap::RoaringBitmap;
@@ -174,21 +171,23 @@ macro_rules! hashcomp {
     };
 }
 
-#[derive(Parser, Debug)]
-struct Args {
+#[derive(Args, Debug)]
+/// Functional dependency discovery
+pub struct FDArgs {
     #[clap(short, long, default_value_t = 0.9)]
+    /// Threshold for approximate discovery
     threshold: f64,
 
     #[clap(short, long, action=clap::ArgAction::SetTrue, default_value_t = false)]
+    /// Enable approximate discovery
     approximate: bool,
 
     #[clap(short='s', long="static", action=clap::ArgAction::SetFalse, default_value_t = true)]
+    /// Use static discovery
     dynamic: bool,
 }
 
-fn main() {
-    let args = Args::parse();
-
+pub fn discover(args: FDArgs) {
     let mut all_values: HashMap<String, usize> = HashMap::new();
     let mut constants: HashMap<String, bool> = HashMap::new();
     let mut first_values: HashMap<String, usize> = HashMap::new();

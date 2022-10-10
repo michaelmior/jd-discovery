@@ -1,11 +1,14 @@
 ```console
-$ jd-ind --help
-Usage: jd-ind[EXE] [OPTIONS]
+$ jd ind --help
+Inclusion dependency discovery
+
+Usage: jd[EXE] ind [OPTIONS]
 
 Options:
-  -t, --threshold <THRESHOLD>  [default: 0.9]
-  -a, --approximate            
-  -s, --static                 
+  -t, --threshold <THRESHOLD>  Threshold for approximate discovery [default: 0.9]
+  -a, --approximate            Enable approximate discovery
+  -s, --static                 Use static discovery
   -h, --help                   Print help information
+  -V, --version                Print version information
 
 ```
