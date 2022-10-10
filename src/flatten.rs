@@ -75,3 +75,29 @@ fn flatten_json_with_path(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use json::object;
+
+    #[test]
+    fn it_flattens_arrays() {
+        let array_obj = object! {foo: [1, 2]};
+        let flat: Vec<_> = flatten_json(&array_obj).collect();
+
+        assert_eq!(flat.len(), 2);
+        assert_eq!(flat[0]["foo[*]"], 1);
+        assert_eq!(flat[1]["foo[*]"], 2);
+    }
+
+    #[test]
+    fn it_flattens_nested_objects() {
+        let nested_obj = object! {foo: {bar: 1}};
+        let flat: Vec<_> = flatten_json(&nested_obj).collect();
+
+        assert_eq!(flat.len(), 1);
+        assert_eq!(flat[0]["foo.bar"], 1);
+    }
+}
