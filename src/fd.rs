@@ -232,6 +232,11 @@ pub fn discover(args: FDArgs) {
     }
     max_lineno += 1;
 
+    // Stop if there is no input
+    if max_lineno == 1 {
+        std::process::exit(0);
+    }
+
     // Remove spinner
     let mut duration = start.elapsed();
     spinner.disable_steady_tick();
