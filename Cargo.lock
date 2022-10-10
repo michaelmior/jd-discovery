@@ -401,8 +401,8 @@ checksum = "8c31b5c4033f8fdde8700e4657be2c497e7288f01515be52168c631e2e4d4086"
 
 [[package]]
 name = "roaring"
-version = "0.9.0"
-source = "git+https://github.com/michaelmior/roaring-rs?branch=master#2315a14cf2f7d2ad82a309200cca1033ca45907e"
+version = "0.10.1"
+source = "git+https://github.com/michaelmior/roaring-rs?branch=hashable#2903409768663a833f43af56b841c75249334e0f"
 dependencies = [
  "bytemuck",
  "byteorder",
