@@ -3,6 +3,12 @@ name = "jd-discovery"
 version = "0.1.0"
 authors = ["Michael Mior <mmior@mail.rit.edu>"]
 edition = "2021"
+description = "Fast dependency discovery on nested JSON data"
+homepage = "https://github.com/michaelmior/jd-discovery/"
+repository = "https://github.com/michaelmior/jd-discovery/"
+license = "MIT"
+keywords = ["json", "dependency"]
+categories = ["command-line-utilities", "database"]
 
 [[bin]]
 name = "jd-ind"
