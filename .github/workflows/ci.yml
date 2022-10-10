@@ -44,4 +44,10 @@ jobs:
       - name: Clippy
         run: cargo clippy --all-features -- -D warnings
       - name: Tests
+        env:
+            RUSTFLAGS: -Cinstrument-coverage
         run: cargo test
+      - name: Combine coverage report
+        run: cargo install grcov && grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o ./coverage.info
+      - name: Upload to Codecov
+        run: bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"
