@@ -17,7 +17,7 @@ jobs:
         uses: fkirc/skip-duplicate-actions@master
         with:
           cancel_others: true
-          concurrent_skipping: same_content
+          concurrent_skipping: same_content_newer
           do_not_skip: '["pull_request", "schedule", "workflow_dispatch"]'
   build:
     name: Test
