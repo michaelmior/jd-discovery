@@ -17,7 +17,7 @@ path = "src/main.rs"
 [dependencies]
 json = "0.12.4"
 itertools = "0.10.5"
-indicatif = "0.17.1"
+indicatif = "0.17.2"
 roaring = { git = "https://github.com/michaelmior/roaring-rs", branch = "hashable" }
 clap = { version = "4.0.12", features = ["derive"] }
 rayon = "1.5.3"
